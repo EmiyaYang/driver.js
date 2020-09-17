@@ -846,10 +846,10 @@ declare module 'driver.js' {
       onPrevious?: (element: Driver.Element) => void;
     }
 
-    type ElementOptions = Driver.DriverOptions
+    type ElementOptions = Driver.DriverOptions;
 
-    type StageOptions = ElementOptions
+    type StageOptions = ElementOptions;
   }
-
-  export = Driver;
 }
+
+export = Driver;

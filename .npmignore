@@ -8,3 +8,6 @@ demo
 config
 dist/demo
 .npmrc
+license
+tsconfig.json
+yarn.lock
