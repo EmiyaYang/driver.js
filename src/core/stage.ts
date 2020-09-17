@@ -7,23 +7,18 @@ import Element from './element';
  * highlight from rest of the page
  */
 export default class Stage extends Element {
-  /**
-   * @param {Object} options
-   * @param {Window} window
-   * @param {Document} document
-   */
+  options: Record<string, any>;
+  document: Document;
+  window: Window;
+
   constructor(options, window, document) {
-    super();
+    super(options);
 
     this.options = options;
     this.window = window;
     this.document = document;
   }
 
-  /**
-   * Prepares the DOM element if not already there
-   * @private
-   */
   attachNode() {
     let stage = this.document.getElementById(ID_STAGE);
     if (!stage) {
@@ -40,10 +35,6 @@ export default class Stage extends Element {
     }
   }
 
-  /**
-   * Simply hides the stage
-   * @public
-   */
   hide() {
     if (!this.node || !this.node.parentElement) {
       return;
@@ -52,10 +43,6 @@ export default class Stage extends Element {
     this.node.parentElement.removeChild(this.node);
   }
 
-  /**
-   * Makes it visible and sets the default properties
-   * @private
-   */
   setInitialStyle() {
     this.node.style.display = 'block';
     this.node.style.left = '0';
@@ -77,16 +64,16 @@ export default class Stage extends Element {
     // Make it two times the padding because, half will be given on left and half on right
     const requiredPadding = this.options.padding * 2;
 
-    const width = (position.right - position.left) + (requiredPadding);
-    const height = (position.bottom - position.top) + (requiredPadding);
+    const width = position.right - position.left + requiredPadding;
+    const height = position.bottom - position.top + requiredPadding;
 
     // Show the stage
     this.node.style.display = 'block';
     this.node.style.position = 'absolute';
     this.node.style.width = `${width}px`;
     this.node.style.height = `${height}px`;
-    this.node.style.top = `${position.top - (requiredPadding / 2)}px`;
-    this.node.style.left = `${position.left - (requiredPadding / 2)}px`;
+    this.node.style.top = `${position.top - requiredPadding / 2}px`;
+    this.node.style.left = `${position.left - requiredPadding / 2}px`;
     this.node.style.backgroundColor = this.options.stageBackground;
   }
 }

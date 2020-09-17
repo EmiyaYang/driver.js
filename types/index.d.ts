@@ -97,6 +97,12 @@ declare module 'driver.js' {
     public preventMove(): void;
 
     /**
+     * Prevents the current move. Useful in `onNext` if you want to
+     * perform some asynchronous task and manually move to next step
+     */
+    preventMove(): void;
+
+    /**
      * Moves to the previous step if possible
      * otherwise resets the overlay
      */
@@ -107,12 +113,6 @@ declare module 'driver.js' {
      * otherwise resets the overlay
      */
     public moveNext(): void;
-
-    /**
-     * Prevents the current move. Useful in `onNext` if you want to
-     * perform some asynchronous task and manually move to next step
-     */
-    preventMove(): void;
 
     /**
      * Checks if can be moved to next step
@@ -244,13 +244,15 @@ declare module 'driver.js' {
        * @param {Window} window
        * @param {Document} document
        */
-      constructor(node: HTMLElement | Node,
-                  options: Driver.DriverOptions,
-                  popover: Driver.Popover,
-                  stage: Driver.Stage,
-                  overlay: Driver.Overlay,
-                  window: Window,
-                  document: Document);
+      constructor(
+        node: HTMLElement | Node,
+        options: Driver.DriverOptions,
+        popover: Driver.Popover,
+        stage: Driver.Stage,
+        overlay: Driver.Overlay,
+        window: Window,
+        document: Document
+      );
 
       /**
        * Checks if the give element is in view port or not
@@ -458,9 +460,7 @@ declare module 'driver.js' {
        * @param {Window} window
        * @param {Document} document
        */
-      constructor(options: Driver.PopoverOptions,
-                  window: Window,
-                  document: Document);
+      constructor(options: Driver.PopoverOptions, window: Window, document: Document);
 
       /**
        * Prepares the DOM element for popover and appends to the body
@@ -591,9 +591,7 @@ declare module 'driver.js' {
        * @param {Window} window
        * @param {Document} document
        */
-      constructor(options: Driver.StageOptions,
-                  window: Window,
-                  document: Document);
+      constructor(options: Driver.StageOptions, window: Window, document: Document);
 
       /**
        * Prepares the node and appends to body if not there already
@@ -618,17 +616,7 @@ declare module 'driver.js' {
     }
 
     class Position {
-      constructor({
-                    left,
-                    top,
-                    bottom,
-                    right,
-                  }: {
-                    left: number,
-                    top: number,
-                    bottom: number,
-                    right: number
-                  });
+      constructor({ left, top, bottom, right }: { left: number; top: number; bottom: number; right: number });
 
       /**
        * Checks if the given position is valid and can be highlighted
@@ -748,43 +736,43 @@ declare module 'driver.js' {
        * Opacity for the overlay
        * @default 0.75
        */
-      opacity?: number,
+      opacity?: number;
 
       /**
        * Distance of elements corner from the edges of the overlay
        * @default 10
        */
-      padding?: number,
+      padding?: number;
 
       /**
        * Options to be passed to scrollIntoView if supported by browser
        * @default { behavior: 'instant', block: 'center' }
        */
-      scrollIntoViewOptions?: ScrollIntoViewOptions,
+      scrollIntoViewOptions?: ScrollIntoViewOptions;
 
       /**
        * Clicking outside the highlighted element should reset driver or not
        * @default true
        */
-      allowClose?: boolean,
+      allowClose?: boolean;
 
       /**
        * Whether to allow controlling steps through keyboard
        * @default true
        */
-      keyboardControl?: boolean,
+      keyboardControl?: boolean;
 
       /**
        * Clicking outside the highlighted element should move next
        * @default false
        */
-      overlayClickNext?: boolean,
+      overlayClickNext?: boolean;
 
       /**
        * Background color for the stage behind the highlighted element
        * @default '#ffffff'
        */
-      stageBackground?: string,
+      stageBackground?: string;
 
       /**
        * Whether to show control buttons or not
@@ -833,19 +821,19 @@ declare module 'driver.js' {
        * @param {Driver.Element} element
        * @returns any
        */
-      onHighlighted?: (element: Driver.Element) => void,
+      onHighlighted?: (element: Driver.Element) => void;
 
       /**
        * Callback to be called when element has been deselected
        * @param {Driver.Element} element
        * @returns any
        */
-      onDeselected?: (element: Driver.Element) => void,
+      onDeselected?: (element: Driver.Element) => void;
 
       /**
        * Is called when the overlay is about to reset
        */
-      onReset?: (element: Driver.Element) => void,
+      onReset?: (element: Driver.Element) => void;
 
       /**
        * Is called when the next element is about to be highlighted
@@ -858,11 +846,9 @@ declare module 'driver.js' {
       onPrevious?: (element: Driver.Element) => void;
     }
 
-    interface ElementOptions extends Driver.DriverOptions {
-    }
+    type ElementOptions = Driver.DriverOptions
 
-    interface StageOptions extends ElementOptions {
-    }
+    type StageOptions = ElementOptions
   }
 
   export = Driver;

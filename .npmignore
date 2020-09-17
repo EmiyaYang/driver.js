@@ -1,6 +1,7 @@
 .editorconfig
 .idea
 .eslintrc.json
+.prettierrc
 index.html
 server.js
 demo

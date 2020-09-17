@@ -6,30 +6,41 @@ import {
 } from '../common/constants';
 import { getStyleProperty } from '../common/utils';
 import Position from './position';
+import Stage from './stage';
+import Popover from './popover';
+import Overlay from './overlay';
 
 /**
  * Wrapper around DOMElements to enrich them
  * with the functionality necessary
  */
 export default class Element {
-  /**
-   * DOM element object
-   * @param {Node|HTMLElement} node
-   * @param {Object} options
-   * @param {Popover} popover
-   * @param {Stage} stage
-   * @param {Overlay} overlay
-   * @param {Window} window
-   * @param {Document} document
-   */
+  node?: HTMLElement;
+  options?: Partial<{
+    scrollIntoViewOptions: Record<string, any>;
+    animate: boolean;
+    onDeselected: any;
+    onHighlightStarted: any;
+    onHighlighted: any;
+    highlightStyle: Record<string, any>;
+  }>;
+
+  originStyle: Record<string, any> = {};
+  popover?: Popover;
+  stage?: Stage;
+  document?: Document;
+  window?: Window;
+  overlay?: Overlay;
+  animationTimeout?: number;
+
   constructor({
-    node,
-    options,
-    popover,
-    stage,
-    overlay,
-    window,
-    document,
+    node = null,
+    options = null,
+    popover = null,
+    stage = null,
+    overlay = null,
+    window = null,
+    document = null,
   } = {}) {
     this.node = node;
     this.document = document;
@@ -38,7 +49,6 @@ export default class Element {
     this.overlay = overlay;
     this.popover = popover;
     this.stage = stage;
-    this.animationTimeout = null;
   }
 
   /**
@@ -61,10 +71,10 @@ export default class Element {
     }
 
     return (
-      top >= this.window.pageYOffset
-      && left >= this.window.pageXOffset
-      && (top + height) <= (this.window.pageYOffset + this.window.innerHeight)
-      && (left + width) <= (this.window.pageXOffset + this.window.innerWidth)
+      top >= this.window.pageYOffset &&
+      left >= this.window.pageXOffset &&
+      top + height <= this.window.pageYOffset + this.window.innerHeight &&
+      left + width <= this.window.pageXOffset + this.window.innerWidth
     );
   }
 
@@ -75,7 +85,7 @@ export default class Element {
   scrollManually() {
     const elementRect = this.node.getBoundingClientRect();
     const absoluteElementTop = elementRect.top + this.window.pageYOffset;
-    const middle = absoluteElementTop - (this.window.innerHeight / 2);
+    const middle = absoluteElementTop - this.window.innerHeight / 2;
 
     this.window.scrollTo(0, middle);
   }
@@ -97,10 +107,12 @@ export default class Element {
     }
 
     try {
-      this.node.scrollIntoView(this.options.scrollIntoViewOptions || {
-        behavior: 'instant',
-        block: 'center',
-      });
+      this.node.scrollIntoView(
+        this.options.scrollIntoViewOptions || {
+          behavior: 'instant',
+          block: 'center',
+        }
+      );
     } catch (e) {
       // `block` option is not allowed in older versions of firefox, scroll manually
       this.scrollManually();
@@ -190,9 +202,8 @@ export default class Element {
    * @public
    */
   onHighlighted() {
-    const highlightedElement = this;
-    if (!highlightedElement.isInView()) {
-      highlightedElement.bringInView();
+    if (!this.isInView()) {
+      this.bringInView();
     }
 
     // Show the popover and stage once the item has been
@@ -215,6 +226,13 @@ export default class Element {
     this.node.classList.remove(CLASS_DRIVER_HIGHLIGHTED_ELEMENT);
     this.node.classList.remove(CLASS_POSITION_RELATIVE);
 
+    this.originStyle &&
+      Object.keys(this.originStyle).forEach((key) => {
+        this.node.style[key] = this.originStyle[key];
+      });
+
+    this.originStyle = {};
+
     const stackFixes = this.document.querySelectorAll(`.${CLASS_FIX_STACKING_CONTEXT}`);
     for (let counter = 0; counter < stackFixes.length; counter++) {
       stackFixes[counter].classList.remove(CLASS_FIX_STACKING_CONTEXT);
@@ -228,6 +246,12 @@ export default class Element {
    */
   addHighlightClasses() {
     this.node.classList.add(CLASS_DRIVER_HIGHLIGHTED_ELEMENT);
+
+    this.options.highlightStyle &&
+      Object.keys(this.options.highlightStyle).forEach((key) => {
+        this.originStyle[key] = this.node.style[key];
+        this.node.style[key] = this.options.highlightStyle[key];
+      });
 
     // Don't make relative if element already has some position set
     if (this.canMakeRelative()) {
@@ -263,13 +287,13 @@ export default class Element {
       // - Opacity is below 0
       // - Filter/transform or perspective is applied
       if (
-        /[0-9]+/.test(zIndex)
-        || opacity < 1
-        || (transform && transform !== 'none')
-        || (transformStyle && transformStyle !== 'flat')
-        || (transformBox && transformBox !== 'border-box')
-        || (filter && filter !== 'none')
-        || (perspective && perspective !== 'none')
+        /[0-9]+/.test(zIndex) ||
+        opacity < 1 ||
+        (transform && transform !== 'none') ||
+        (transformStyle && transformStyle !== 'flat') ||
+        (transformBox && transformBox !== 'border-box') ||
+        (filter && filter !== 'none') ||
+        (perspective && perspective !== 'none')
       ) {
         parentNode.classList.add(CLASS_FIX_STACKING_CONTEXT);
       }
@@ -307,7 +331,7 @@ export default class Element {
    * @public
    */
   showStage() {
-    this.stage.show(this.getCalculatedPosition());
+    this.stage && this.stage.show(this.getCalculatedPosition());
   }
 
   /**
@@ -324,7 +348,7 @@ export default class Element {
    * @public
    */
   hideStage() {
-    this.stage.hide();
+    this.stage && this.stage.hide();
   }
 
   /**
@@ -332,11 +356,7 @@ export default class Element {
    * @public
    */
   hidePopover() {
-    if (!this.popover) {
-      return;
-    }
-
-    this.popover.hide();
+    this.popover && this.popover.hide();
   }
 
   /**

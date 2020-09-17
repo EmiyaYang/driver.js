@@ -1,9 +1,17 @@
 {
-  "extends": "airbnb-base",
   "env": {
     "browser": true
   },
+  "parser": "@typescript-eslint/parser",
+  "plugins": ["@typescript-eslint"],
+  "extends": [
+    "eslint:recommended",
+    "plugin:@typescript-eslint/eslint-recommended",
+    "plugin:@typescript-eslint/recommended"
+  ],
   "rules": {
+    "@typescript-eslint/explicit-module-boundary-types": "off",
+    "@typescript-eslint/no-explicit-any": "off",
     "no-underscore-dangle": "off",
     "no-plusplus": "off",
     "no-cond-assign": "off",
@@ -13,9 +21,7 @@
     "no-bitwise": "off",
     "class-methods-use-this": "off",
     "prefer-destructuring": "off",
-    "no-param-reassign": [
-      "off"
-    ],
+    "no-param-reassign": ["off"],
     "max-len": "off",
     "no-multi-spaces": "off"
   }

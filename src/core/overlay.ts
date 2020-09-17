@@ -1,21 +1,25 @@
 import { ANIMATION_DURATION_MS, ID_OVERLAY, OVERLAY_HTML } from '../common/constants';
 import { createNodeFromString } from '../common/utils';
+import Element from './element';
 
 /**
  * Responsible for overlay creation and manipulation i.e.
  * cutting out the visible part, animating between the sections etc
  */
 export default class Overlay {
-  /**
-   * @param {Object} options
-   * @param {Window} window
-   * @param {Document} document
-   */
+  document: Document;
+  window: Window;
+  node?: HTMLElement;
+  highlightedElement?: Element;
+  lastHighlightedElement?: Element;
+  hideTimer?: number;
+  options: Record<string, any>;
+
   constructor(options, window, document) {
     this.options = options;
 
-    this.highlightedElement = null;              // currently highlighted dom element (instance of Element)
-    this.lastHighlightedElement = null;          // element that was highlighted before current one
+    this.highlightedElement = null; // currently highlighted dom element (instance of Element)
+    this.lastHighlightedElement = null; // element that was highlighted before current one
     this.hideTimer = null;
 
     this.window = window;
@@ -63,9 +67,9 @@ export default class Overlay {
     }
 
     // If highlighted element is not changed from last time
-    if (element.isSame(this.highlightedElement)) {
-      return;
-    }
+    // if (element.isSame(this.highlightedElement)) {
+    //   return;
+    // }
 
     // There might be hide timer from last time
     // which might be getting triggered

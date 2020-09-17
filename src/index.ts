@@ -1,6 +1,7 @@
 import Overlay from './core/overlay';
-import Element from './core/element';
 import Popover from './core/popover';
+import Stage from './core/stage';
+import Element from './core/element';
 import {
   CLASS_CLOSE_BTN,
   CLASS_NEXT_STEP_BTN,
@@ -16,41 +17,44 @@ import {
   SHOULD_OUTSIDE_CLICK_NEXT,
   ALLOW_KEYBOARD_CONTROL,
 } from './common/constants';
-import Stage from './core/stage';
 import { isDomElement } from './common/utils';
+import { Step } from 'driver.js';
 
-/**
- * Plugin class that drives the plugin
- */
 export default class Driver {
-  /**
-   * @param {Object} options
-   */
+  options: Record<string, any>;
+  document: Document;
+  window: Window;
+  isActivated: boolean;
+  overlay: Overlay;
+  steps: Step[];
+  currentStep: number;
+  currentMovePrevented: boolean;
+
   constructor(options = {}) {
     this.options = {
       animate: SHOULD_ANIMATE_OVERLAY, // Whether to animate or not
-      opacity: OVERLAY_OPACITY,    // Overlay opacity
-      padding: OVERLAY_PADDING,    // Spacing around the element from the overlay
+      opacity: OVERLAY_OPACITY, // Overlay opacity
+      padding: OVERLAY_PADDING, // Spacing around the element from the overlay
       scrollIntoViewOptions: null, // Options to be passed to `scrollIntoView`
-      allowClose: SHOULD_OUTSIDE_CLICK_CLOSE,      // Whether to close overlay on click outside the element
-      keyboardControl: ALLOW_KEYBOARD_CONTROL,     // Whether to allow controlling through keyboard or not
+      allowClose: SHOULD_OUTSIDE_CLICK_CLOSE, // Whether to close overlay on click outside the element
+      keyboardControl: ALLOW_KEYBOARD_CONTROL, // Whether to allow controlling through keyboard or not
       overlayClickNext: SHOULD_OUTSIDE_CLICK_NEXT, // Whether to move next on click outside the element
-      stageBackground: '#ffffff',       // Background color for the stage
-      onHighlightStarted: () => null,   // When element is about to be highlighted
-      onHighlighted: () => null,        // When element has been highlighted
-      onDeselected: () => null,         // When the element has been deselected
-      onReset: () => null,              // When overlay is about to be cleared
-      onNext: () => null,               // When next button is clicked
-      onPrevious: () => null,           // When previous button is clicked
+      stageBackground: '#ffffff', // Background color for the stage
+      onHighlightStarted: () => null, // When element is about to be highlighted
+      onHighlighted: () => null, // When element has been highlighted
+      onDeselected: () => null, // When the element has been deselected
+      onReset: () => null, // When overlay is about to be cleared
+      onNext: () => null, // When next button is clicked
+      onPrevious: () => null, // When previous button is clicked
       ...options,
     };
 
     this.document = document;
     this.window = window;
     this.isActivated = false;
-    this.steps = [];                    // steps to be presented if any
-    this.currentStep = 0;               // index for the currently highlighted step
-    this.currentMovePrevented = false;  // If the current move was prevented
+    this.steps = []; // steps to be presented if any
+    this.currentStep = 0; // index for the currently highlighted step
+    this.currentMovePrevented = false; // If the current move was prevented
 
     this.overlay = new Overlay(this.options, window, document);
 
@@ -65,20 +69,10 @@ export default class Driver {
     this.bind();
   }
 
-  /**
-   * Getter for steps property
-   * @readonly
-   * @public
-   */
   getSteps() {
     return this.steps;
   }
 
-  /**
-   * Setter for steps property
-   * @param steps
-   * @public
-   */
   setSteps(steps) {
     this.steps = steps;
   }
@@ -204,22 +198,6 @@ export default class Driver {
   }
 
   /**
-   * Moves to the previous step if possible
-   * otherwise resets the overlay
-   * @public
-   */
-  movePrevious() {
-    const previousStep = this.steps[this.currentStep - 1];
-    if (!previousStep) {
-      this.reset();
-      return;
-    }
-
-    this.overlay.highlight(previousStep);
-    this.currentStep -= 1;
-  }
-
-  /**
    * Prevents the current move. Useful in `onNext` if you want to
    * perform some asynchronous task and manually move to next step
    * @public
@@ -237,8 +215,8 @@ export default class Driver {
 
     // Call the bound `onNext` handler if available
     const currentStep = this.steps[this.currentStep];
-    if (currentStep && currentStep.options && currentStep.options.onNext) {
-      currentStep.options.onNext(this.overlay.highlightedElement);
+    if (currentStep && currentStep.onNext) {
+      currentStep.onNext(this.overlay.highlightedElement);
     }
 
     if (this.currentMovePrevented) {
@@ -257,8 +235,8 @@ export default class Driver {
 
     // Call the bound `onPrevious` handler if available
     const currentStep = this.steps[this.currentStep];
-    if (currentStep && currentStep.options && currentStep.options.onPrevious) {
-      currentStep.options.onPrevious(this.overlay.highlightedElement);
+    if (currentStep && currentStep.onPrevious) {
+      currentStep.onPrevious(this.overlay.highlightedElement);
     }
 
     if (this.currentMovePrevented) {
@@ -280,8 +258,19 @@ export default class Driver {
       return;
     }
 
-    this.overlay.highlight(nextStep);
+    this.highlight(nextStep, this.steps, this.currentStep + 1);
     this.currentStep += 1;
+  }
+
+  movePrevious() {
+    const previousStep = this.steps[this.currentStep - 1];
+    if (!previousStep) {
+      this.reset();
+      return;
+    }
+
+    this.highlight(previousStep, this.steps, this.currentStep - 1);
+    this.currentStep -= 1;
   }
 
   /**
@@ -339,12 +328,7 @@ export default class Driver {
     return this.overlay.getLastHighlightedElement();
   }
 
-  /**
-   * Defines steps to be highlighted
-   * @param {array} steps
-   * @public
-   */
-  defineSteps(steps) {
+  defineSteps(steps: any[]) {
     this.steps = [];
 
     for (let counter = 0; counter < steps.length; counter++) {
@@ -393,10 +377,7 @@ export default class Driver {
 
     let popover = null;
     if (elementOptions.popover && elementOptions.popover.title) {
-      const mergedClassNames = [
-        this.options.className,
-        elementOptions.popover.className,
-      ].filter(c => c).join(' ');
+      const mergedClassNames = [this.options.className, elementOptions.popover.className].filter((c) => c).join(' ');
 
       const popoverOptions = {
         ...elementOptions,
@@ -411,10 +392,13 @@ export default class Driver {
       popover = new Popover(popoverOptions, this.window, this.document);
     }
 
-    const stageOptions = { ...elementOptions };
-    const stage = new Stage(stageOptions, this.window, this.document);
+    let stage = null;
 
-    return new Element({
+    if (elementOptions.showStage) {
+      stage = new Stage({ ...elementOptions }, this.window, this.document);
+    }
+
+    const e = new Element({
       node: domElement,
       options: elementOptions,
       popover,
@@ -423,6 +407,11 @@ export default class Driver {
       window: this.window,
       document: this.document,
     });
+
+    // TODO: constructor
+    e.removeHighlightClasses();
+
+    return e;
   }
 
   /**
@@ -437,7 +426,7 @@ export default class Driver {
 
     this.isActivated = true;
     this.currentStep = index;
-    this.overlay.highlight(this.steps[index]);
+    this.highlight(this.steps[index], this.steps, index);
   }
 
   /**
@@ -445,10 +434,14 @@ export default class Driver {
    * @param {string|{element: string, popover: {}}} selector Query selector or a step definition
    * @public
    */
-  highlight(selector) {
+  async highlight(selector, ...args) {
     this.isActivated = true;
 
-    const element = this.prepareElementFromStep(selector);
+    if (selector && selector.pre) {
+      await selector.pre();
+    }
+
+    const element = this.prepareElementFromStep(selector, ...args);
     if (!element) {
       return;
     }

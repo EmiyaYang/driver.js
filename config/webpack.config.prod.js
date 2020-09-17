@@ -4,10 +4,10 @@ const OptimizeCssAssetsPlugin = require('optimize-css-assets-webpack-plugin');
 
 module.exports = {
   mode: 'production',
-  entry: [
-    './src/driver.scss',
-    './src/index.js',
-  ],
+  entry: ['./src/driver.scss', './src/index.ts'],
+  resolve: {
+    extensions: ['.scss', '.ts', '.js', '.mjs'],
+  },
   output: {
     path: path.join(__dirname, '/../dist'),
     publicPath: '/dist/',
@@ -19,7 +19,7 @@ module.exports = {
   module: {
     rules: [
       {
-        test: /\.js$/,
+        test: /\.(js|ts)$/,
         exclude: /node_modules/,
         loader: 'eslint-loader',
         enforce: 'pre',
@@ -29,7 +29,7 @@ module.exports = {
         },
       },
       {
-        test: /\.js$/,
+        test: /\.(js|ts)$/,
         exclude: /node_modules/,
         loader: 'babel-loader',
       },
@@ -75,5 +75,5 @@ module.exports = {
   stats: {
     colors: true,
   },
-  devtool: 'cheap-module-source-map',
+  devtool: 'source-map',
 };
